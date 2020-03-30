@@ -28,7 +28,7 @@ int main() {
     */
 
    
-
+/*
     //SANTO IL SIGNOREEE COSI SI ACCEDE ALLA STRUCT NODE
     Bst<int>::Node n(3);  //nodo indipendente 
 
@@ -40,6 +40,6 @@ int main() {
 	
 	return 0;
 	
-	
+	*/
 	
 }

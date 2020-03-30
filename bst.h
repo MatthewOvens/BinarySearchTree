@@ -23,7 +23,7 @@ class Bst {
 
 public: 
 
-	typename insigned int size_type;
+	typename unsigned int size_type;
 
 	/**
 		Struttura di supporto interna che implementa un nodo dell'albero.
@@ -260,15 +260,32 @@ public:
 			return &(n->value);
 		}
 		
-		// Operatore di iterazione post-incremento
+		/**
+		 	@brief Operatore di iterazione post-incremento (X++)
+		
+			@return l'iteratore prim dell'incremento
+		*/
 		const_iterator operator++(int) {
+
+
+
+
+
 			const_iterator tmp(*this);
 			_n = _n->next;
 			return tmp;
 		}
 
-		// Operatore di iterazione pre-incremento
+		/**
+		 	@brief Operatore di iterazione pre-incremento (++X)
+
+			@return l'iteratore incrementato
+		*/ 
 		const_iterator& operator++() {
+
+
+
+
 			_n = _n->next;
 			return *this;
 		}
