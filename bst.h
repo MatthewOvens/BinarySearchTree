@@ -6,6 +6,8 @@
 #include <cstddef>  // std::ptrdiff_t  			  //???
 
 
+//MERDAAAAAA
+
 /**
 	Classe che implementa una lista ordinata di dati generici T. 
 	L'oridnamento e' effettuati utilizzando un funtore di comparazione F.
