@@ -17,6 +17,73 @@ struct compare_int {
 	}
 };
 
+struct equal_double {
+	bool operator()(double a, double b) const {
+		return a==b;
+	}
+};
+
+struct compare_double {
+	bool operator()(double a, double b) const {
+		return a<b;
+	}
+};
+
+struct equal_char {
+	bool operator()(char a, char b) const {
+		return a==b;
+	}
+};
+
+struct compare_char {
+	bool operator()(char a, char b) const {
+		return a<b;
+	}
+};
+
+struct equal_string {
+	bool operator()(char *a, char *b) const {
+
+		unsigned int contA = 0;
+		unsigned int contB = 0;
+
+		for(int i = 0; a[i] != '\0'; i++){
+			contA++;
+		}
+		for(int i = 0; b[i] != '\0'; i++){
+			contB++;
+		}
+
+		if(contA == contB){
+
+			for(int i = 0; i<contA; i++){
+				if(a[i] != b[i]){
+					return false;
+				}
+			}
+			return true;
+		}
+		else 
+			return false;
+	}
+};
+
+struct compare_string {
+	bool operator()(char *a, char *b) const {
+
+
+
+
+
+		//sgkusgkuhsdg
+		return a<b;
+	}
+};
+
+
+
+
+
 
 
 int main() {
@@ -46,32 +113,69 @@ int main() {
     */
 
 
-   //TEST COSTRUTTORE SECONDARIO CON ARRAY 
-	int dim = 10;
-	int a[dim]= {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+   //TEST COSTRUTTORE SECONDARIO CON ARRAY DIN INTERI 
+	const int dim = 12;
+	int a[dim]= {10, 5, 15, 3, 8, 20, 1, 4, 6, 9, 18, 22};
 	Bst<int, compare_int, equal_int> albero2(a, dim);
 
-	albero2.print();
+	std::cout<<"Stampa di albero2 : "<<std::endl;
+	albero2.printTree(albero2.get_head());
+	std::cout<<"Elementi al suo interno : "<<albero2.get_size()<<std::endl;
 
 
    	//TEST ADD 
     Bst<int, compare_int, equal_int> albero1;  //Costruttore di default 
 
-	albero1.add(4);
-	albero1.print();
-
-	albero1.add(1);
-	albero1.print();
-
-	albero1.add(6);
-	albero1.print();
-
+	albero1.add(15);
 	albero1.add(10);
-	albero1.print();
+	albero1.add(6);
+	albero1.add(18);
+	albero1.add(20);
+	albero1.add(16);
+	albero1.add(13);
 
-	albero1.add(3);
+	std::cout<<"Stampa di albero1 : "<<std::endl;
+	albero1.printTree(albero1.get_head());
+	std::cout<<"Elementi al suo interno : "<<albero1.get_size()<<std::endl;
 
-	 albero1.print();
+
+	//TEST COPY COSTRUCTOR 
+	Bst<int, compare_int, equal_int> albero3(albero1);
+
+	std::cout<<"Stampa di albero3 : "<<std::endl;
+	albero3.printTree(albero3.get_head());
+	std::cout<<"Elementi al suo interno : "<<albero3.get_size()<<std::endl;
+
+
+	//TEST CLEAR E DISTRUTTORI
+
+	//albero1.clear();
+	albero2.clear();
+	albero3.clear();
+	
+	std::cout<<"Dimensione albero1 dopo clear: "<<albero1.get_size()<<std::endl;
+	std::cout<<"Dimensione albero2 dopo clear: "<<albero2.get_size()<<std::endl;
+	std::cout<<"Dimensione albero3 dopo clear: "<<albero3.get_size()<<std::endl;
+
+
+
+	//TEST OPERATORE DI ASSEGNAMENTO 
+	Bst<int, compare_int, equal_int> albero4;
+
+	albero4 = albero1;
+
+	albero4.printTree(albero4.get_head());
+
+
+
+
+
+	
+	/*
+	bool b = ('f'=='f');
+
+	std::cout<<b<<std::endl;
+	*/
 
 
 	//TEST ITERATORI 

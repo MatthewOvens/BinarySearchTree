@@ -37,6 +37,10 @@ public:
 template <typename T, typename C, typename E>
 class Bst {
 
+public: 
+	typedef unsigned int size_type;
+	typedef T value_type;
+
 private:
 
 	/**
@@ -45,7 +49,7 @@ private:
 		@brief Nodo dell'albero
 	*/
 	struct Node {
-		T value;  ///< Dato inserito nel nodo 
+		value_type value;  ///< Dato inserito nel nodo 
 		Node *left;	///< puntatore al nodo figlio di sinistra 
 		Node *right;	///< puntatore al nodo figlio di destra 
 		Node *parent;  ///< puntatore al nodo padre 
@@ -60,24 +64,35 @@ private:
 			Costruttore secondario che inizializza il nodo
 			@param v valore del dato
 		*/
-		Node(const T &v) : value(v), left(nullptr), right(nullptr), parent(nullptr){}
+		Node(const value_type &v) : value(v), left(nullptr), right(nullptr), parent(nullptr){}
 
 		/**
-			Costruttore secondario che inizializza il nodo "legandolo" al suo parente
+			Costruttore secondario che inizializza il nodo con i rispettivi nodo figlio sinistro,
+			nodo figlio destro e parent  
+
 			@param v valore del dato
-			@param n_parent puntatore al nodo figlio di sinistra
+			@param n_left puntatore al nodo figlio di sinistra
+			@param n_right puntatore al nodo figlio di destra
+			@param n_parent puntatore al nodo parent
 		*/
-		// Node(const T &v, Node *n_parent) : value(v), parent(n_parent), left(nullptr), right(nullptr) {}
+		Node(const value_type &v, Node *n_left, Node *n_right, Node *n_parent)
+		 : value(v), parent(n_parent), left(n_left), right(n_right) {}
+
+		/**
+			Costruttore secondario che inizializza il nodo con i rispettivi nodo figlio sinistro e nodo figlio destro  
+
+			@param v valore del dato
+			@param n_left puntatore al nodo figlio di sinistra
+			@param n_right puntatore al nodo figlio di destra
+		*/
+		Node(const value_type &v, Node *n_left, Node *n_right)
+		 : value(v), parent(nullptr), left(n_left), right(n_right) {}
 			
 		/**
 			Distruttore 
 			CONTROLLARE BENE IN SEGUITO SE SI FA COSI
 		*/
 		~Node() {
-			delete this;
-			delete left;
-			delete right;
-			delete parent;
 			left = nullptr;
 			right = nullptr;
 			parent = nullptr;
@@ -88,10 +103,36 @@ private:
 	}; // struct nodo
 
 	Node *head; ///< puntatore alla radice dell'albero 
-	unsigned int size; ///< nodi presenti all'interno dell'albero
+	size_type size; ///< nodi presenti all'interno dell'albero
 
 	C conf; ///< oggetto funtore per ordinamento dei nodi all'interno dell'albero
 	E eql; ///< oggetto funtore per l'uguaglianza
+
+	/**
+	    @brief Metodo helper per il clear()
+
+	    Naviga l'albero in maniera post-order, ricorsivamente, cancellando tutti
+	    i nodi appartenenti all'albero la cui radice è stata passata come parametro 
+
+		@param n nodo radice dell'albero da cancellare
+	*/
+	void helper_clear(Node *n) {
+
+		if (n == nullptr)
+			return;
+
+		// attraversa il sottoalbero di sinistra 
+		helper_clear(n->left);
+
+		// attraversa il sottoalbero di destra 
+		helper_clear(n->right);
+
+		//eliminazione del nodo 
+		delete n;
+		size--;
+		n = nullptr;
+	}
+
 
 public:
 
@@ -107,38 +148,43 @@ public:
 
 		@param other albero da copiare 
 
-		provo a farlo dopo con l'iteratore
-
-		THROW DI ECCEZIONI 
+		@throw voidTreeException 
+		@throw .....
 	*/
 	explicit Bst(const Bst <T,C,E> &other): head(nullptr), size(0) {
 
-		head = other.head;
-		size = other.getSize();
-
-		const 
+		if(other.head != nullptr)
+			helper_copy_cstr(other.head);
+		else 
+			throw voidTreeException();
 
 	}
-
 
 
 	/**
-		@brief Costruttore secondario 
+	   @brief Metodo helper per il costruttore di copia 
 
-		Costruttore secondario che inizializza l'albero con la sua radice
+	   Naviga l'albero in maniera pre-order, ricorsivamente, e ad ogni chiamata 
+	   aggiunge il nodo passato come parametro all'albero 
 
-		@param n  nodo da inserire come radice
+	   @param head nodo radice dal quale partire 
+
+	   @throw ..... DA AGGIUNGERE TRY CATCH 
+	   @throw .......
 	*/
-/*
-	explicit Bst(const Node &n): head(nullptr), size(0) {
-		
-
-		add(n);
-
-		
-	}
-	*/
+	void helper_copy_cstr(const Node *head) {
 	
+		if (head == nullptr)
+			return;
+
+		add(head->value);
+		
+		// Attraversamento dei rami sinistri dell'albero 
+		helper_copy_cstr(head->left);
+
+		// Attraversamento dei rami destri dell'albero 
+		helper_copy_cstr(head->right);
+	}
 
 	/**
 	    @brief Costruttore secondario
@@ -149,13 +195,39 @@ public:
 		@param array  array di nodi usati per costruire l'albero
 		@param dim   dimensione array  
 	*/
-	Bst(const T *array, unsigned int dim): head(nullptr), size(0) {
+	Bst(const value_type *array, const size_type dim): head(nullptr), size(0) {
 
-		for(int i = 0; i != dim; i++){
+		for(size_type i = 0; i != dim; i++){
 
 			add(array[i]);
 
 		}
+	}
+
+	/**
+	    @brief Distruttore  
+	*/
+	~Bst() {
+		clear();
+	}
+
+	/**
+		@brief Operatore di assegnamento
+		
+		@param other albero da copiare
+
+		@return reference a this
+
+		@throw eccezione di allocazione di memoria
+		@throw ........
+	*/
+	Bst &operator=(const Bst &other) {
+		if(this != &other) {
+			Bst tmp(other);  //Copy costructor
+			std::swap(head,tmp.head);
+			std::swap(size,tmp.size);
+		}
+		return *this;
 	}
 
 	/**
@@ -184,10 +256,54 @@ public:
 	}
 	*/
 
-	void print() {
+	/**
+	    @brief  Metodo di stampa dell'albero 
 
-		std::cout<<"dimensione: "<< size <<std::endl;
+		Richiamando il metodo helper_print, stampa il contenuto dell'albero la cui radice 
+		è stata passata come paramentro 
 
+	    @param n Nodo radice dell'albero da stampare
+
+		@throw voidTreeException 
+	*/
+	void printTree(const Node* n) const {
+		
+		if(n == nullptr)
+			throw voidTreeException();
+		else 
+			helper_print(n, 0);
+	}
+
+	/**
+	    @brief Metodo helper per il metodo print
+
+		Ricorsivamente, processando prima i rami destri dell'albero, poi quelli sinistri 
+		stampa orizzontalmente il contenuto dell'albero, seguendo un struttura
+		simil-albero binario
+
+		@param n nodo di partenza, si passa la radice dell'albero che si vuole stampare 
+		@param space numero intero che viene incrementato di 10 dipendentemente dalla 
+					 profondità del nodo che bisogna stampare
+	*/  
+	void helper_print(const Node *n, size_type space) const {  
+		 
+		if (n == NULL)  
+			return;  
+
+		//aumenta la distanza in base al livello del nodo
+		space += 10;  
+	  
+	  	//processa l'albero destro
+		helper_print(n->right, space);  
+	
+		// stampa il nodo corrente dopo lo spazio  
+		std::cout<<std::endl;  
+		for (size_type i = 10; i < space; i++)  
+			std::cout<<" ";  
+		std::cout<<n->value<<std::endl;  
+	
+		// Process left child  
+		helper_print(n->left, space);  
 	}
 
 	/**
@@ -198,7 +314,7 @@ public:
 	   @return puntatore al nodo con il valore più piccolo 
 	   @throw voidTreeException  (se gli passi un albero vuoto)
 	*/
-	Node* findMin() const {
+	const Node* findMin() const {
 
 		Node* pnt = head;
 
@@ -225,7 +341,7 @@ public:
 	   @return puntatore al nodo con il valore più grande 
 	   @throw voidTreeException  (se gli passi un albero vuoto)
 	*/
-	Node* findMax() const {
+	const Node* findMax() const {
 
 		Node* pnt = head;
 
@@ -244,16 +360,17 @@ public:
 	}
 
 	/**
-	    @brief Metodo che aggiunge un nodo all'albero, secondo la strategia definita dal funtore di confronto  
+	    @brief Metodo che aggiunge un nodo all'albero, secondo la strategia definita dai funtori di confronto  
 
-		@param n nodo da aggiungere all'albero 
-		@param 
+		@param val valore da aggiungere all'albero  
 	    @throw ....................
+		@throw duplicateDataException (se si aggiunge un nodo con un valore già presente nell'albero)
 	*/
-	void add (const T &val) {
+	void add (const value_type &val) {
 
 		if(head == nullptr){
 
+			//AGGIUNGERE ECCEZIONE DI ALLOCAZIONE DI MEMORIA 
 			head = new Node(val);
 			size++;
 
@@ -279,6 +396,7 @@ public:
 
 			}
 
+			//AGGIUNGERE ECCEZIONE ALLOCAZONE MEMORIA FARE TRY CATCH
 			Node* newNode = new Node(val);
 
 			newNode->parent = pnt2;	
@@ -292,26 +410,36 @@ public:
 		}
 	}
 
-
-
-
-
-
-
-
-
-
-
 	/**
-	   @brief Metodo che trova il nodo col valore (value) maggiore nell'albero 
+	    @brief Metodo che permette di conoscere il numero totale di dati inseriti nell'albero
 
-	   Scende l'albero verso destra, fino a trovare l'ultimo nodo che non sia null
-
-	   @return puntatore al nodo con il valore più grande 
+	    @return la size dell'albero, ossia il numero di nodi al suo interno  
 	*/
-	unsigned int getSize() const {
+	size_type get_size() const {
 		return size;
 	}
+
+	/**
+	    @brief Metodo che permette di accedere al nodo radice dell'albero 
+
+	    @return il puntatore al nodo radice dell'albero   
+	*/
+	const Node* get_head(){
+
+		return head;
+
+	}
+
+ 	/**
+	    @brief Cancella il contenuto dell'albero  
+	*/
+
+	void clear() {
+		helper_clear(head);
+		head = nullptr;
+	}
+
+
 
 
 
