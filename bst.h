@@ -2,18 +2,15 @@
 #define BST_H
 
 #include <ostream>
-#include <iterator> // std::forward_iterator_tag  //???
-#include <cstddef>  // std::ptrdiff_t  			  //???
+#include <iterator> // std::forward_iterator_tag  
+#include <cstddef>  // std::ptrdiff_t  			  
 
 
-class voidTreeException : public std::logic_error {
-public:
-	/**
-		Costruttore di default 
-	*/
-    voidTreeException() : std::logic_error("Operation on a void tree") {}
-};
+/**
+   @brief Eccezione custom
 
+   Viene lanciata quando si tenta di inserire un dato T gia' esistente all'interno dell'albero
+*/
 class duplicateDataException : public std::logic_error {
 public:
 	/**
@@ -23,12 +20,13 @@ public:
 };
 
 /**
-	Classe che implementa una lista ordinata di dati generici T. 
-	L'oridnamento e' effettuati utilizzando un funtore di comparazione F.
-	Di default il funtore usa l'orinamento naturale dei dati indotto dagli
-	operatori di confronto standard. 
+	Classe che implementa un albero binario di ricerca di dati generici T. 
+	Il confronto tra dati T e' effettuato utilizzando due funtori di comparazione
+	uno per l'uguaglianza (E), l'altro per il confronto (C)
+	La strategia di confronto tra dati grazie a questi due funtori e' definibile 
+	dall'utente in fare di creazione dell'albero.
 
-	@brief Lista ordinata
+	@brief Generic Binary Serach Tree 
 
 	@param T tipo del dato
 	@param C funtore di comparazione (<) di due dati
@@ -57,11 +55,11 @@ private:
 		/**
 			Costruttore di default
 		*/
-
-		Node(): left(nullptr), right(nullptr), parent(nullptr) {} 
+		Node(): left(nullptr), right(nullptr), parent(nullptr), value(nullptr){} 
 
 		/**
 			Costruttore secondario che inizializza il nodo
+
 			@param v valore del dato
 		*/
 		Node(const value_type &v) : value(v), left(nullptr), right(nullptr), parent(nullptr){}
@@ -90,7 +88,6 @@ private:
 			
 		/**
 			Distruttore 
-			CONTROLLARE BENE IN SEGUITO SE SI FA COSI
 		*/
 		~Node() {
 			left = nullptr;
@@ -102,8 +99,8 @@ private:
 
 	}; // struct nodo
 
-	Node *head; ///< puntatore alla radice dell'albero 
-	size_type size; ///< nodi presenti all'interno dell'albero
+	Node *_head; ///< puntatore alla radice dell'albero 
+	size_type _size; ///< nodi presenti all'interno dell'albero
 
 	C conf; ///< oggetto funtore per ordinamento dei nodi all'interno dell'albero
 	E eql; ///< oggetto funtore per l'uguaglianza
@@ -129,55 +126,65 @@ private:
 
 		//eliminazione del nodo 
 		delete n;
-		size--;
+		_size--;
 		n = nullptr;
 	}
 
 
-public:
-
 	/**
-		Costruttore di default (METODO FONDAMENTALE) 
-	*/
-	Bst() : head(nullptr), size(0) {};
+	    @brief Metodo helper per il metodo print
 
-	/**
-		@brief Costruttore di copia (METODO FONDAMENTALE) 
+		Ricorsivamente, processando prima i rami destri dell'albero, poi quelli sinistri 
+		stampa orizzontalmente il contenuto dell'albero, seguendo un struttura
+		simil-albero binario
 
-		Permette di inizializzare un nuovo albero con i valori presi da un altro albero 
+		@param n nodo di partenza, si passa la radice dell'albero che si vuole stampare 
+		@param space numero intero che viene incrementato di 10 dipendentemente dalla 
+					 profondità del nodo che bisogna stampare
+	*/  
+	void helper_print(const Node *n, size_type space) const {  
+		 
+		if (n == nullptr)  
+			return;  
 
-		@param other albero da copiare 
-
-		@throw voidTreeException 
-		@throw .....
-	*/
-	explicit Bst(const Bst <T,C,E> &other): head(nullptr), size(0) {
-
-		if(other.head != nullptr)
-			helper_copy_cstr(other.head);
-		else 
-			throw voidTreeException();
-
+		//aumenta la distanza in base al livello del nodo
+		space += 10;  
+	  
+	  	//processa il ramo destro destro
+		helper_print(n->right, space);  
+	
+		// stampa il nodo corrente dopo lo spazio  
+		std::cout<<std::endl;  
+		for (size_type i = 10; i < space; i++)  
+			std::cout<<" ";  
+		std::cout<<n->value<<std::endl;  
+	
+		// processa il ramo sinistro  
+		helper_print(n->left, space);  
 	}
 
-
 	/**
-	   @brief Metodo helper per il costruttore di copia 
+		@brief Metodo helper per il costruttore di copia 
 
-	   Naviga l'albero in maniera pre-order, ricorsivamente, e ad ogni chiamata 
-	   aggiunge il nodo passato come parametro all'albero 
+		Naviga l'albero in maniera pre-order, ricorsivamente, e ad ogni chiamata 
+		aggiunge il nodo passato come parametro all'albero 
 
-	   @param head nodo radice dal quale partire 
+		@param head nodo radice dal quale partire 
 
-	   @throw ..... DA AGGIUNGERE TRY CATCH 
-	   @throw .......
+		@throw eccezione di allocazione di memoria (runtime)
 	*/
 	void helper_copy_cstr(const Node *head) {
 	
 		if (head == nullptr)
 			return;
 
-		add(head->value);
+		try {
+			add(head->value);
+		}
+		catch(...){
+			clear();
+			throw;
+		}
 		
 		// Attraversamento dei rami sinistri dell'albero 
 		helper_copy_cstr(head->left);
@@ -187,20 +194,80 @@ public:
 	}
 
 	/**
+	    @brief Metodo che trova il nodo col valore (value) minore nell'albero 
+
+		Scende l'albero verso sinistra, fino a trovare l'ultimo nodo che non sia null
+		Se viene chiamata su un albero vuoto, ritorna il puntatore a null
+
+	    @return puntatore al nodo con il valore più piccolo   
+	*/
+	const Node* findMin() const {
+
+		Node* pnt = _head;
+
+		if(_head != nullptr) {
+
+			while (pnt->left != nullptr) {  
+
+				pnt = pnt->left;
+				
+			}
+			return pnt;
+		}
+		else 
+			return pnt;
+	}
+
+
+public:
+
+	/**
+		Costruttore di default (METODO FONDAMENTALE) 
+	*/
+	Bst() : _head(nullptr), _size(0) {};
+
+	/**
+		@brief Costruttore di copia (METODO FONDAMENTALE) 
+
+		Permette di inizializzare un nuovo albero con i valori presi da un altro albero 
+
+		@param other albero da copiare 
+
+		@throw eccezione di allocazione di memoria (runtime)
+	*/
+	Bst(const Bst <T,C,E> &other): _head(nullptr), _size(0) {
+		
+		if(other._head != nullptr)
+			helper_copy_cstr(other._head);
+		else {
+			_head = nullptr;      //se gli si passa un albero vuoto, quello corrente lo inizializzo con i dati membro 
+			_size = 0;			 //di default, evitando di lanciare un'eccezione
+		}
+		
+	}
+
+	/**
 	    @brief Costruttore secondario
 
 		Costruttore secondario che inizializza l'albero inserendo tutti i nodi presenti
 		nell'array passato come parametro
 
 		@param array  array di nodi usati per costruire l'albero
-		@param dim   dimensione array  
+		@param dim   dimensione array 
+
+		@throw eccezione di allocazione di memoria (runtime)
+		@throw duplicateDataException
 	*/
-	Bst(const value_type *array, const size_type dim): head(nullptr), size(0) {
+	Bst(const value_type *array, const size_type dim): _head(nullptr), _size(0) {
 
 		for(size_type i = 0; i != dim; i++){
-
-			add(array[i]);
-
+			try {
+				add(array[i]);
+			}
+			catch(...){
+				clear();
+				throw;
+			}
 		}
 	}
 
@@ -218,43 +285,16 @@ public:
 
 		@return reference a this
 
-		@throw eccezione di allocazione di memoria
-		@throw ........
+		@throw eccezione di allocazione di memoria (runtime)
 	*/
 	Bst &operator=(const Bst &other) {
 		if(this != &other) {
 			Bst tmp(other);  //Copy costructor
-			std::swap(head,tmp.head);
-			std::swap(size,tmp.size);
+			std::swap(_head,tmp._head);
+			std::swap(_size,tmp._size);
 		}
 		return *this;
 	}
-
-	/**
-	    @brief Costruttore di copia secondario 
-
-		Costruttore di copia secondario che inizializza un nuovo albero copiandolo da un altro 
-		albero di tipo generico Q 
-
-		@param other albero da copiare 
-
-		THROW DI ECCEZIONI 
-
-	*/
-//NON E' RICHIESTO, AGGIUNGERE SE SI HA TEMPO
-	/*
-	template<typename Q>
-	Bst(const Bst <Q> &other) : head(nullptr), size(0) {
-
-		Bst<Q>::const_iterator ib = other.begin();
-		Bst<Q>::const_iterator ie = other.end();
-
-
-
-
-
-	}
-	*/
 
 	/**
 	    @brief  Metodo di stampa dell'albero 
@@ -263,120 +303,37 @@ public:
 		è stata passata come paramentro 
 
 	    @param n Nodo radice dell'albero da stampare
-
-		@throw voidTreeException 
 	*/
 	void printTree(const Node* n) const {
 		
 		if(n == nullptr)
-			throw voidTreeException();
-		else 
+			std::cout<<"Albero vuoto, niente da stampare"<<std::endl;  //Se gli si passa un nodo radice null, e quindi un albero vuoto, 						   
+		else 					   //va semplicemente a capo, evitando di lanciare un'eccezione
 			helper_print(n, 0);
-	}
-
-	/**
-	    @brief Metodo helper per il metodo print
-
-		Ricorsivamente, processando prima i rami destri dell'albero, poi quelli sinistri 
-		stampa orizzontalmente il contenuto dell'albero, seguendo un struttura
-		simil-albero binario
-
-		@param n nodo di partenza, si passa la radice dell'albero che si vuole stampare 
-		@param space numero intero che viene incrementato di 10 dipendentemente dalla 
-					 profondità del nodo che bisogna stampare
-	*/  
-	void helper_print(const Node *n, size_type space) const {  
-		 
-		if (n == NULL)  
-			return;  
-
-		//aumenta la distanza in base al livello del nodo
-		space += 10;  
-	  
-	  	//processa l'albero destro
-		helper_print(n->right, space);  
-	
-		// stampa il nodo corrente dopo lo spazio  
-		std::cout<<std::endl;  
-		for (size_type i = 10; i < space; i++)  
-			std::cout<<" ";  
-		std::cout<<n->value<<std::endl;  
-	
-		// Process left child  
-		helper_print(n->left, space);  
-	}
-
-	/**
-	   @brief Metodo che trova il nodo col valore (value) minore nell'albero 
-
-		Scende l'albero verso sinistra, fino a trovare l'ultimo nodo che non sia null
-
-	   @return puntatore al nodo con il valore più piccolo 
-	   @throw voidTreeException  (se gli passi un albero vuoto)
-	*/
-	const Node* findMin() const {
-
-		Node* pnt = head;
-
-		if(head != nullptr) {
-
-			while (pnt->left != nullptr) {  
-
-				pnt = pnt->left;
-				
-			}
-		}
-		else 
-			throw voidTreeException();
-
-		return pnt;
-	}
-
-
-	/**
-	   @brief Metodo che trova il nodo col valore (value) maggiore nell'albero 
-
-	   Scende l'albero verso destra, fino a trovare l'ultimo nodo che non sia null
-
-	   @return puntatore al nodo con il valore più grande 
-	   @throw voidTreeException  (se gli passi un albero vuoto)
-	*/
-	const Node* findMax() const {
-
-		Node* pnt = head;
-
-		if(head != nullptr) {
-
-			while (pnt->right != nullptr) {  
-
-				pnt = pnt->right;
-				
-			}
-		}
-		else 
-			throw voidTreeException();
-
-		return pnt;
 	}
 
 	/**
 	    @brief Metodo che aggiunge un nodo all'albero, secondo la strategia definita dai funtori di confronto  
 
 		@param val valore da aggiungere all'albero  
-	    @throw ....................
-		@throw duplicateDataException (se si aggiunge un nodo con un valore già presente nell'albero)
+
+	    @throw eccezione di allocazione di memoria (runtime)
+		@throw duplicateDataException
 	*/
 	void add (const value_type &val) {
 
-		if(head == nullptr){
+		if(_head == nullptr){
 
-			//AGGIUNGERE ECCEZIONE DI ALLOCAZIONE DI MEMORIA 
-			head = new Node(val);
-			size++;
-
+			try {
+				_head = new Node(val);
+				_size++;
+			}
+			catch(...){  //Non c'e' bisogno di aggiungere _head = nullpnt perche' e' condizione dell'if in cui siamo
+				throw;
+			}
 		}
 		else {
-			Node* pnt1 = head;
+			Node* pnt1 = _head;
 			Node* pnt2;
 
 			while(pnt1 != nullptr){
@@ -384,6 +341,7 @@ public:
 				if(eql(val, pnt1->value)){
 
 					throw duplicateDataException();
+
 				}
 				else if(conf(val, pnt1->value)) {   //se val è minore di pnt1->value 
 					pnt2 = pnt1;
@@ -396,17 +354,22 @@ public:
 
 			}
 
-			//AGGIUNGERE ECCEZIONE ALLOCAZONE MEMORIA FARE TRY CATCH
-			Node* newNode = new Node(val);
+			try {
+				Node* newNode = new Node(val);
 
-			newNode->parent = pnt2;	
+				newNode->parent = pnt2;	
 
-			size++;	
+				_size++;	
 
-			if(conf(val, pnt2->value))
-				pnt2->left = newNode;
-			else 
-				pnt2->right = newNode;
+				if(conf(val, pnt2->value))
+					pnt2->left = newNode;
+				else 
+					pnt2->right = newNode;
+			}
+			catch(...){
+				clear();
+				throw;
+			}
 		}
 	}
 
@@ -415,47 +378,90 @@ public:
 
 	    @return la size dell'albero, ossia il numero di nodi al suo interno  
 	*/
-	size_type get_size() const {
-		return size;
+	const size_type get_size() const {
+		return _size;
 	}
 
 	/**
 	    @brief Metodo che permette di accedere al nodo radice dell'albero 
 
-	    @return il puntatore al nodo radice dell'albero   
+	    @return il puntatore al nodo radice dell'albero 
 	*/
-	const Node* get_head(){
-
-		return head;
-
+	const Node* get_head() const {
+		return _head;
 	}
 
  	/**
 	    @brief Cancella il contenuto dell'albero  
 	*/
-
 	void clear() {
-		helper_clear(head);
-		head = nullptr;
+		helper_clear(_head);
+		_head = nullptr;
 	}
 
+	/**
+	    @brief Metodo di controllo esistenza di un elemento T all'interno dell'albero 
 
+		Con l'aiuto degli iteratori il metodo naviga l'intero albero in cerca del valore 
+		passato come argomento
+		L'uguaglianza è definita dal funtore di confronto eql
 
+		@param value elemento da cercare tra i nodi dell'albero 
 
+		@return true se il valore viene trovato, false altrimenti
+	*/
+	bool exist(const value_type &value) const{
 
+		if(_head != nullptr){
+			const_iterator i = begin();
+			const_iterator ie = end();
 
+			while(i != ie){
 
+				if(eql(value, *i))
+					return true;
+				
+				++i;
+			}
 
+			return false;
+		}
+		else 
+			return false;
+	}
 
+	/**
+	    @brief Metodo subtree
 
+		Ritorna un nuovo albero, il quale deve corrispondere al sottoalbero 
+		avente come radice il nodo con il valore passato come parametro 
 
+		@param value valore di un nodo appartenente all'albero sul quale è stato
+					 chiamato il metodo, e che sarà la radice del sottoalbero risultante
 
+		@throw eccezione di allocazione di memoria (runtime)
+	*/
+	Bst subtree(const value_type &value) {
 
+		const_iterator i = begin();
+		const_iterator ie = end();
 
+		Bst newTree;
+		
+		while(i != ie){
+			
+			if(eql(*i, value)){
+				newTree.helper_copy_cstr(i.n);
+				return newTree;
+			}
+			else 
+				++i;
+		}
 
+		return newTree;	
+	}
 
-
-
+	
 
 	/**
 		Iteratore costante (CONST) dell'albero
@@ -475,12 +481,11 @@ public:
 
 	public:
 
-	//ASSICURARSI SIANO GIUSTIIII
 		typedef std::forward_iterator_tag  	iterator_category;
-		typedef Node                    	value_type;
+		typedef T                    		value_type;
 		typedef ptrdiff_t                 	difference_type;
-		typedef const Node*              	pointer;
-		typedef const Node&               	reference;
+		typedef const T*              		pointer;
+		typedef const T&               		reference;
 
 		/**
 		   @brief Costruttore di default 
@@ -542,8 +547,7 @@ public:
 			Node *p;  //puntatore di appoggio
   
 			
-			if (n->right != nullptr)
-			{
+			if (n->right != nullptr) {
 				n = n->right;
 				
 				while (n->left != nullptr) {
@@ -560,8 +564,7 @@ public:
 				// was the last node inorder, and its successor
 				// is the end of the list
 				p = n->parent;
-				while (p != nullptr && n == p->right)
-				{
+				while (p != nullptr && n == p->right){
 					n = p;
 					p = p->parent;
 				}
@@ -584,8 +587,7 @@ public:
 			Node *p;  //puntatore di appoggio
   
 			
-			if (n->right != nullptr)
-			{
+			if (n->right != nullptr) {
 				n = n->right;
 				
 				while (n->left != nullptr) {
@@ -602,8 +604,7 @@ public:
 				// was the last node inorder, and its successor
 				// is the end of the list
 				p = n->parent;
-				while (p != nullptr && n == p->right)
-				{
+				while (p != nullptr && n == p->right) {
 					n = p;
 					p = p->parent;
 				}
@@ -648,7 +649,7 @@ public:
 		@return iteratore all'inizio della sequenza
 	*/
 	const_iterator begin() const {
-		return const_iterator(findMin());
+		return const_iterator(findMin()); 
 	}
 	
 	/**
@@ -659,24 +660,49 @@ public:
 	const_iterator end() const {
 		return const_iterator(nullptr);
 	}
+}; //Fine classe Bst
 
 
 
+/**
+	@brief Ridefinizione dell'operatore di stream per la stampa del contenuto
+		   dell'albero
 
+	@param os oggetto stream di output
+	@param ot albero da stampare
 
+	@return reference allo stream di output
+*/
+template <typename T, typename C, typename E>
+std::ostream &operator<<(std::ostream &os, const Bst<T,C,E> &ot) {
+	
+	ot.printTree(ot.get_head());
 
+	return os;
+}
 
-
-
-
-
-
-
-
-
-};
-
-
-
+/**
+	@brief  Funzione globale printIF che dato un albero binario di tipo T, e un predicato P, 
+			stampa a schermo tutti i valori contenuti nell’albero che soddisfano il predicato
+	
+	@param ot albero del quale vanno conrollati tutti i nodi affinchè siano acettati dal predicat
+	@param pred predicato 
+*/
+template <typename T, typename C, typename E, typename P>
+void printIF(const Bst<T,C,E> &ot, P pred) {
+	
+	typename Bst<T,C,E>::const_iterator i, ie;
+	
+	i = ot.begin();
+	ie = ot.end();
+	
+	while(i!=ie) {
+		if(pred(*i)) {
+			std::cout << *i << " ";
+		}
+		++i;
+	}
+	std::cout<<std::endl;
+}
 
 #endif
