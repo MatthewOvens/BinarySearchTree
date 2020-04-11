@@ -11,20 +11,31 @@
 
    Viene lanciata quando si tenta di inserire un dato T gia' esistente all'interno dell'albero
 */
-class duplicateDataException : public std::logic_error {
-public:
+class duplicateDataException {
+private:
+
+	std::string message;
+
+public: 
 	/**
-		Costruttore di default 
+		Costruttore 
 	*/
-    duplicateDataException() : std::logic_error("Error, duplicate data, the tree don't accept it") {}
+	duplicateDataException(const std::string message) {
+		this->message = message;
+	}
+
+	std::string get_message() {
+		return message;
+	}
 };
+
 
 /**
 	Classe che implementa un albero binario di ricerca di dati generici T. 
 	Il confronto tra dati T e' effettuato utilizzando due funtori di comparazione
 	uno per l'uguaglianza (E), l'altro per il confronto (C)
 	La strategia di confronto tra dati grazie a questi due funtori e' definibile 
-	dall'utente in fare di creazione dell'albero.
+	dall'utente alla creazione dell'albero.
 
 	@brief Generic Binary Serach Tree 
 
@@ -48,7 +59,7 @@ private:
 	*/
 	struct Node {
 		value_type value;  ///< Dato inserito nel nodo 
-		Node *left;	///< puntatore al nodo figlio di sinistra 
+		Node *left;		///< puntatore al nodo figlio di sinistra 
 		Node *right;	///< puntatore al nodo figlio di destra 
 		Node *parent;  ///< puntatore al nodo padre 
 
@@ -97,13 +108,13 @@ private:
 
 		// NOTA: per tutti gli altri metodi fondamentali vanno bene quelli di default
 
-	}; // struct nodo
+	}; //fine struct Node
 
 	Node *_head; ///< puntatore alla radice dell'albero 
 	size_type _size; ///< nodi presenti all'interno dell'albero
 
-	C conf; ///< oggetto funtore per ordinamento dei nodi all'interno dell'albero
-	E eql; ///< oggetto funtore per l'uguaglianza
+	C conf; ///< oggetto funtore per il confronto
+	E eql;  ///< oggetto funtore per l'uguaglianza
 
 	/**
 	    @brief Metodo helper per il clear()
@@ -142,7 +153,7 @@ private:
 		@param space numero intero che viene incrementato di 10 dipendentemente dalla 
 					 profondità del nodo che bisogna stampare
 	*/  
-	void helper_print(const Node *n, size_type space) const {  
+	void helper_print(const Node *n, unsigned int space) const {  
 		 
 		if (n == nullptr)  
 			return;  
@@ -150,12 +161,12 @@ private:
 		//aumenta la distanza in base al livello del nodo
 		space += 10;  
 	  
-	  	//processa il ramo destro destro
+	  	//processa il ramo destro
 		helper_print(n->right, space);  
 	
 		// stampa il nodo corrente dopo lo spazio  
 		std::cout<<std::endl;  
-		for (size_type i = 10; i < space; i++)  
+		for (unsigned int i = 10; i < space; i++)  
 			std::cout<<" ";  
 		std::cout<<n->value<<std::endl;  
 	
@@ -258,9 +269,9 @@ public:
 		@throw eccezione di allocazione di memoria (runtime)
 		@throw duplicateDataException
 	*/
-	Bst(const value_type *array, const size_type dim): _head(nullptr), _size(0) {
+	Bst(const value_type *array, const unsigned int dim): _head(nullptr), _size(0) {
 
-		for(size_type i = 0; i != dim; i++){
+		for(unsigned int i = 0; i != dim; i++){
 			try {
 				add(array[i]);
 			}
@@ -307,8 +318,8 @@ public:
 	void printTree(const Node* n) const {
 		
 		if(n == nullptr)
-			std::cout<<"Albero vuoto, niente da stampare"<<std::endl;  //Se gli si passa un nodo radice null, e quindi un albero vuoto, 						   
-		else 					   //va semplicemente a capo, evitando di lanciare un'eccezione
+			std::cerr<<"Albero vuoto, niente da stampare"<<std::endl;  //Se gli si passa un nodo radice null, e quindi un albero vuoto, 						   
+		else 					   									   //stampa un messaggio di errore, evitando di lanciare un'eccezione
 			helper_print(n, 0);
 	}
 
@@ -340,7 +351,7 @@ public:
 
 				if(eql(val, pnt1->value)){
 
-					throw duplicateDataException();
+					throw duplicateDataException("Error, duplicate data, the tree don't accept it");
 
 				}
 				else if(conf(val, pnt1->value)) {   //se val è minore di pnt1->value 
@@ -436,12 +447,15 @@ public:
 		Ritorna un nuovo albero, il quale deve corrispondere al sottoalbero 
 		avente come radice il nodo con il valore passato come parametro 
 
-		@param value valore di un nodo appartenente all'albero sul quale è stato
+		@param value valore di un nodo da cercare all'interno dell'albero sul quale è stato
 					 chiamato il metodo, e che sarà la radice del sottoalbero risultante
+
+		@return il sottoalbero risultante, se si fa il subtree su un albero vuoto o su un albero in cui 
+				non e' presente il valore passato come paramentro, il metodo ritorna un albero vuoto
 
 		@throw eccezione di allocazione di memoria (runtime)
 	*/
-	Bst subtree(const value_type &value) {
+	Bst subtree(const value_type &value) const{
 
 		const_iterator i = begin();
 		const_iterator ie = end();
@@ -556,22 +570,12 @@ public:
 			}
 			else
 			{
-				// have already processed the left subtree, and
-				// there is no right subtree. move up the tree,
-				// looking for a parent for which nodePtr is a left child,
-				// stopping if the parent becomes NULL. a non-NULL parent
-				// is the successor. if parent is NULL, the original node
-				// was the last node inorder, and its successor
-				// is the end of the list
 				p = n->parent;
 				while (p != nullptr && n == p->right){
 					n = p;
 					p = p->parent;
 				}
 				
-				// if we were previously at the right-most node in
-				// the tree, nodePtr = nullptr, and the iterator specifies
-				// the end of the list
 				n = p;
 			}
 			return tmp;
@@ -596,22 +600,12 @@ public:
 			}
 			else
 			{
-				// have already processed the left subtree, and
-				// there is no right subtree. move up the tree,
-				// looking for a parent for which nodePtr is a left child,
-				// stopping if the parent becomes NULL. a non-NULL parent
-				// is the successor. if parent is NULL, the original node
-				// was the last node inorder, and its successor
-				// is the end of the list
 				p = n->parent;
 				while (p != nullptr && n == p->right) {
 					n = p;
 					p = p->parent;
 				}
 				
-				// if we were previously at the right-most node in
-				// the tree, nodePtr = nullptr, and the iterator specifies
-				// the end of the list
 				n = p;
 			}
 		

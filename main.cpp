@@ -157,7 +157,7 @@ void test_costruttori(){
 
 	std::cout<<"\nTest costruttore secondario con array"<<std::endl;
 	const int dim = 12;
-	int a[dim]= {10, 5, 15, 3, 8, 20, 1, 4, 6, 9, 18, 22};
+	const int a[dim]= {10, 5, 15, 3, 8, 20, 1, 4, 6, 9, 18, 22};
 	Bst<int, compare_int, equal_int> alberoArray(a, dim);
 	assert(alberoArray.get_size() == dim);
 	std::cout<<"Size dell'albero creato con il costruttore secondario (con array): "<<alberoArray.get_size()<<std::endl;
@@ -172,7 +172,7 @@ void test_costruttori(){
 
 
 	const int dim2 = 7;
-	char carray[dim2]= {'M', 'n', 'a', 'o', 'Q', 'R', 'P'};
+	const char carray[dim2]= {'M', 'n', 'a', 'o', 'Q', 'R', 'P'};
 	Bst<char, compare_char, equal_char> alberoC(carray, dim2);
 	std::cout<<"\nTest operatore di assegnamento"<<std::endl;
 	Bst<char, compare_char, equal_char> alberoCopia2;
@@ -188,13 +188,13 @@ void test_iteratori(){
 	std::cout<<"\n---------- Test metodi che utilizzano gli iteratori ( printIf / exist ) ----------"<<std::endl;
 
 	const int dim = 7;
-	char carray[dim]= {'M', 'n', 'a', 'o', 'Q', 'R', 'P'};
+	const char carray[dim]= {'M', 'n', 'a', 'o', 'Q', 'R', 'P'};
 	Bst<char, compare_char, equal_char> alberoC(carray, dim);
-	int iarray[dim]= {23, 14, 25, 17, 10, 6, 76};
+	const int iarray[dim]= {23, 14, 25, 17, 10, 6, 76};
 	Bst<int, compare_int, equal_int> alberoI(iarray, dim);
-	std::string sarray[dim]= {"mil", "bicoc", "cio", "ciao", "ci", "unib", "bicocca"};
+	const std::string sarray[dim]= {"mil", "bicoc", "cio", "ciao", "ci", "unib", "bicocca"};
 	Bst<std::string, compare_string, equal_string> alberoS(sarray, dim);
-	Book barray[dim]= {Book(1234, 500), Book(1010, 400), Book(2345, 350), Book(1676, 700), Book(7234, 650), Book(6834, 800), Book(3535, 501)};
+	const Book barray[dim]= {Book(1234, 500), Book(1010, 400), Book(2345, 350), Book(1676, 700), Book(7234, 650), Book(6834, 800), Book(3535, 501)};
 	Bst<Book, compare_books, equal_books> alberoB(barray, dim);
 
 
@@ -247,8 +247,8 @@ void test_intTree() {
 	try{
 		alberoInt.add(8);   //dovrebbe lanciare l'eccezione duplicateDataException
 	}
-	catch(duplicateDataException e) {
-		std::cerr << e.what() << std::endl;
+	catch(duplicateDataException &e) {
+		std::cerr << e.get_message() << std::endl;
 		assert(alberoInt.get_size() == 7); // controllo che non sia aumentata la size
 	}
 
@@ -292,8 +292,8 @@ void test_charTree() {
 	try{
 		alberoChar.add('A');   //dovrebbe lanciare l'eccezione duplicateDataException
 	}
-	catch(duplicateDataException e) {
-		std::cerr << e.what() << std::endl;
+	catch(duplicateDataException &e) {
+		std::cerr << e.get_message() << std::endl;
 		assert(alberoChar.get_size() == 7); // controllo che non sia aumentata la size
 	}
 
@@ -336,8 +336,8 @@ void test_stringTree() {
 	try{
 		alberoString.add("helloo");   //dovrebbe lanciare l'eccezione duplicateDataException
 	}
-	catch(duplicateDataException e) {
-		std::cerr << e.what() << std::endl;
+	catch(duplicateDataException &e) {
+		std::cerr << e.get_message() << std::endl;
 		assert(alberoString.get_size() == 7); // controllo che non sia aumentata la size
 	}
 
@@ -348,7 +348,7 @@ void test_stringTree() {
 
 	std::cout<<"\nTest subtree"<<std::endl;
 	Bst<std::string, compare_string, equal_string> subString;
-	subString = alberoString.subtree("ciao");
+	subString = alberoString.subtree("ci");
 	std::cout<<"Sottoalbero di alberoString:"<<std::endl;
 	std::cout<<subString<<std::endl;
 
@@ -379,8 +379,8 @@ void test_booksTree() {
 	try{
 		alberoBooks.add(Book(6834, 800));   //dovrebbe lanciare l'eccezione duplicateDataException
 	}
-	catch(duplicateDataException e) {
-		std::cerr << e.what() << std::endl;
+	catch(duplicateDataException &e) {
+		std::cerr << e.get_message() << std::endl;
 		assert(alberoBooks.get_size() == 7); // controllo che non sia aumentata la size
 	}
 
@@ -401,7 +401,50 @@ void test_booksTree() {
 
 }
 
+void test_casi_limite() {
 
+	std::cout<<"\n---------- Test casi limite ----------"<<std::endl;
+
+	Bst<int, compare_int, equal_int> alberoVuoto;
+	std::cout<<"\nStampa di un albero vuoto:"<<std::endl;
+	alberoVuoto.printTree(alberoVuoto.get_head());
+
+	Bst<int, compare_int, equal_int> copiaAlberoVuoto(alberoVuoto);
+	std::cout<<"\nStampa dell'albero copiato da un albero vuoto:"<<std::endl;
+	copiaAlberoVuoto.printTree(copiaAlberoVuoto.get_head());
+	assert(copiaAlberoVuoto.get_size() == 0);
+
+	//Test del metodo clear su un albero già vuoto (Non lo tocca lo lascia cosi)
+	alberoVuoto.clear();
+	assert(alberoVuoto.get_size() == 0);
+
+	//Test dell'operatore di assegnamento con un albero vuoto
+	Bst<int, compare_int, equal_int> alberoConOperatore = alberoVuoto;
+	assert(alberoConOperatore.get_size() == 0);
+
+	//Test subtree su albero vuoto
+	alberoVuoto.subtree(5);
+	assert(alberoVuoto.get_size() == 0);
+
+	//Test subtree con valore non abbartenente all'albero
+	const int dim2 = 7;
+	const int iArray[dim2] = {10, 15, 8, 16, 5, 20, 7};
+	Bst<int, compare_int, equal_int> albero(iArray, dim2);
+	Bst<int, compare_int, equal_int> sottoalbero;
+	sottoalbero = albero.subtree(6);
+	assert(sottoalbero.get_size() == 0);
+
+	//Test printIF su albero vuoto
+	std::cout<<"\nprintIF su albero vuoto, stampa dei valori pari (Non ce ne dovrebbero essere essendo l'albero vuoto): "<<std::endl;
+	printIF(alberoVuoto, is_even());
+
+	//Test exist su albero vuoto
+	assert(!alberoVuoto.exist(2));
+
+
+
+	
+}
 
 
 int main() { 
@@ -417,6 +460,8 @@ int main() {
 	test_booksTree();
 
 	test_iteratori();
+
+	test_casi_limite();
 
 	return 0;
 }
